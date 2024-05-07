@@ -1,1 +1,1 @@
-# common
+# dapr-platform common library
