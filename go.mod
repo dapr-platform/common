@@ -2,7 +2,12 @@ module github.com/dapr-platform/common
 
 go 1.22.2
 
-require github.com/dapr/go-sdk v1.10.1
+require (
+	github.com/dapr/go-sdk v1.9.1
+	github.com/guregu/null v4.0.0+incompatible
+	github.com/pkg/errors v0.9.1
+	github.com/sirupsen/logrus v1.9.3
+)
 
 require (
 	github.com/dapr/dapr v1.13.0 // indirect
