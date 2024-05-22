@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/pkg/errors"
+	"net/url"
 
 	dapr "github.com/dapr/go-sdk/client"
 	"log"
@@ -41,7 +42,7 @@ func DbPageQuery[T any](ctx context.Context, client dapr.Client, page, pageSize 
 		return
 	}
 	var dataList []T
-	dec := json.NewDecoder(bytes.NewReader(ret)) //避免int64精度丢失
+	dec := json.NewDecoder(bytes.NewReader(ret))
 	dec.UseNumber()
 	err = dec.Decode(&dataList)
 
@@ -129,7 +130,6 @@ func DbGetCount[T any](ctx context.Context, client dapr.Client, tableName string
 	return
 }
 
-// keys只能设置主键
 func DbUpsert[T any](ctx context.Context, client dapr.Client, data T, tableName string, primaryKeys string) (err error) {
 	buf, err := json.Marshal(data)
 	if err != nil {
@@ -147,7 +147,6 @@ func DbUpsert[T any](ctx context.Context, client dapr.Client, data T, tableName 
 	return
 }
 
-// keys只能设置主键
 func DbBatchUpsert[T any](ctx context.Context, client dapr.Client, datas []T, tableName string, primaryKeys string) (err error) {
 	if len(datas) == 0 {
 		return
@@ -188,54 +187,13 @@ func DbInsert[T any](ctx context.Context, client dapr.Client, data T, tableName 
 	return
 }
 
-/*
-func DbUpdate(ctx context.Context, client dapr.Client, tableName string, data map[string]string, idField string, id string) (resp *Response, err error) {
-	buf, err := json.Marshal(data)
-	if err != nil {
-		err = errors.WithMessage(err, "DbInsert marshal error")
-		return
-	}
-	dataContent := &dapr.DataContent{
-		ContentType: "text/json",
-		Data:        buf,
-	}
-	ret, err := client.InvokeMethodWithContent(ctx, DB_SERVICE_NAME, "/"+DBNAME+"/"+DB_SCHEMA+"/"+tableName+"?"+idField+"="+id, "put", dataContent)
-	if err != nil {
-		return
-	} else {
-		resp = OK.WithData(ret)
-	}
-	return
-}
-
-func DbUpdateByQuery(ctx context.Context, client dapr.Client, tableName string, data map[string]string, queryString string) (resp *Response, err error) {
-	buf, err := json.Marshal(data)
-	if err != nil {
-		err = errors.WithMessage(err, "DbInsert marshal error")
-		return
-	}
-	dataContent := &dapr.DataContent{
-		ContentType: "text/json",
-		Data:        buf,
-	}
-	ret, err := client.InvokeMethodWithContent(ctx, DB_SERVICE_NAME, "/"+DBNAME+"/"+DB_SCHEMA+"/"+tableName+"?"+queryString, "put", dataContent)
-	if err != nil {
-		return
-	} else {
-		resp = OK.WithData(ret)
-	}
-	return
-}
-
-*/
-
 func DbDelete(ctx context.Context, client dapr.Client, tableName string, idField string, id string) (err error) {
 
 	_, err = client.InvokeMethod(ctx, DB_SERVICE_NAME, "/"+DBNAME+"/"+DB_SCHEMA+"/"+tableName+"?"+idField+"="+id, "delete")
 	return err
 }
 
-func DbDeleteDayExpired(ctx context.Context, client dapr.Client, tableName string, timeField string, expireTime time.Time) (err error) {
+func DbDeleteExpired(ctx context.Context, client dapr.Client, tableName string, timeField string, expireTime time.Time) (err error) {
 
 	method := "/" + DBNAME + "/" + DB_SCHEMA + "/" + tableName + "?" + timeField + "='$lt." + expireTime.Format("2006-01-02T15:04:05") + "'"
 
@@ -338,6 +296,30 @@ func DbBatchInsert[T any](ctx context.Context, client dapr.Client, val []T, tabl
 		return
 	}
 	return nil
+}
+
+func CustomSql[T any](ctx context.Context, client dapr.Client, selectField, fromField, whereField string) (result []T, err error) {
+	selectField = url.QueryEscape(selectField)
+	fromField = url.QueryEscape(fromField)
+	whereField = url.QueryEscape(whereField)
+	sqlScript := "/_QUERIES/table/custom_sql?select_field=" + selectField + "&from_field=" + fromField + "&where_field=" + whereField
+	ret, err := client.InvokeMethod(ctx, DB_SERVICE_NAME, sqlScript, "get")
+	if err != nil {
+		log.Printf("errno=%d, method=%s,error=%s\n", ErrServiceInvokeDB.Status, sqlScript, err.Error())
+		err = errors.WithMessage(err, "dbQuery error")
+		return
+	}
+	dec := json.NewDecoder(bytes.NewReader(ret)) //避免int64精度丢失
+	dec.UseNumber()
+	err = dec.Decode(&result)
+
+	if err != nil {
+		log.Printf("errno=%d, method=%s,error=%s\n", ErrListUnMashal.Status, "unMashal dataList", err.Error())
+		err = errors.WithMessage(err, "unmashal error")
+		return
+	}
+
+	return
 }
 
 func escapeSqlSingleQuote(src string) string {

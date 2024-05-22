@@ -3,6 +3,7 @@ package common
 import (
 	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/dapr/go-sdk/client"
@@ -16,6 +17,8 @@ const (
 	retryInterval      = 5 * time.Second // 定义重试间隔
 )
 
+var once = sync.Once{}
+
 func getDaprPort() string {
 	port := os.Getenv(daprPortEnvVarName)
 	if port == "" {
@@ -24,7 +27,7 @@ func getDaprPort() string {
 	return port
 }
 
-func createDaprClient(port string) (client.Client, error) {
+func createDaprClient(port string) client.Client {
 	var c client.Client
 	var err error
 	for {
@@ -35,18 +38,23 @@ func createDaprClient(port string) (client.Client, error) {
 		fmt.Printf("Failed to create Dapr client: %v, retrying in %v...\n", err, retryInterval)
 		time.Sleep(retryInterval)
 	}
-	return c, err
+	return c
 }
 
-func GetDaprClient() (client.Client, error) {
-	if daprClient != nil {
-		return daprClient, nil
-	}
-	port := getDaprPort()
-	var err error
-	daprClient, err = createDaprClient(port)
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize Dapr client after retries: %w", err)
-	}
-	return daprClient, nil
+func GetDaprClient() client.Client {
+	once.Do(func() {
+		port := getDaprPort()
+		var err error
+		for {
+			daprClient, err = client.NewClientWithPort(port)
+			if err == nil {
+				break
+			}
+			fmt.Printf("Failed to create Dapr client: %v, retrying in %v...\n", err, retryInterval)
+			time.Sleep(retryInterval)
+		}
+
+	})
+	return daprClient
+
 }
