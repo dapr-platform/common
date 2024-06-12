@@ -4,16 +4,18 @@ go 1.22.2
 
 require (
 	github.com/dapr/go-sdk v1.10.1
+	github.com/go-chi/chi/v5 v5.0.12
 	github.com/guregu/null v4.0.0+incompatible
+	github.com/jaevor/go-nanoid v1.4.0
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
+	github.com/spf13/cast v1.6.0
 )
 
 require (
 	github.com/dapr/dapr v1.13.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/kr/pretty v0.3.1 // indirect
 	go.opentelemetry.io/otel v1.23.1 // indirect
 	go.opentelemetry.io/otel/trace v1.23.1 // indirect
 	golang.org/x/net v0.21.0 // indirect
