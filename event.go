@@ -1,5 +1,11 @@
 package common
 
+import (
+	"context"
+	dapr "github.com/dapr/go-sdk/client"
+	"github.com/pkg/errors"
+)
+
 // event指告警类事件
 var (
 	PLATFORM_ALARM_TOPIC_NAME = "platform-alarm"
@@ -37,4 +43,48 @@ type Event struct {
 	ObjectID    string    `json:"object_id"`
 	ObjectName  string    `json:"object_name"`
 	Location    string    `json:"location"`
+}
+
+type MethodInvokeInfo struct {
+	Service string `json:"service"`
+	Method  string `json:"method"` //"GET POST PUT DELETE"
+	Url     string `json:"url"`
+	Data    any    `json:"data"`
+}
+
+func PublishMethodInvokeMessage(ctx context.Context, client dapr.Client, event MethodInvokeInfo) error {
+
+	err := client.PublishEvent(ctx, PUBSUB_NAME, METHOD_INVOKE_TOPIC, event)
+	if err != nil {
+		err = errors.Wrap(err, "PublishDbUpsertMessage")
+	}
+	return err
+}
+
+type DbUpsertEvent struct {
+	Db         string `json:"db"`
+	Schema     string `json:"schema"`
+	Table      string `json:"table"`
+	Keys       string `json:"keys"`
+	Batch      bool   `json:"batch"`
+	Ignorekeys string `json:"ignorekeys"`
+	Data       any    `json:"data"`
+}
+
+func PublishDbUpsertMessage(ctx context.Context, client dapr.Client, table, keys, ignorekeys string, batch bool, data any) error {
+	event := DbUpsertEvent{
+		Db:         DBNAME,
+		Schema:     DB_SCHEMA,
+		Table:      table,
+		Keys:       keys,
+		Batch:      batch,
+		Ignorekeys: ignorekeys,
+		Data:       data,
+	}
+
+	err := client.PublishEvent(ctx, PUBSUB_NAME, "db_upsert_event", event)
+	if err != nil {
+		err = errors.Wrap(err, "PublishDbUpsertMessage")
+	}
+	return err
 }
