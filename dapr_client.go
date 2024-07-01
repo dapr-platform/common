@@ -33,7 +33,6 @@ func getDaprPort() string {
 func GetDaprClient() client.Client {
 	once.Do(func() {
 		port := getDaprPort()
-		var err error
 		for {
 			maxRequestBodySize := 16384
 			var opts []grpc.CallOption
