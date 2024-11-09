@@ -297,7 +297,11 @@ func DbBatchInsert[T any](ctx context.Context, client dapr.Client, val []T, tabl
 	}
 	return nil
 }
-
+func DbRefreshContinuousAggregate(ctx context.Context, client dapr.Client, name, start, end string) (err error) {
+	sqlScript := "/_QUERIES/mv/refresh_continuous_aggregate?name=" + name + "&start=" + start + "&end=" + end
+	_, err = client.InvokeMethod(ctx, DB_SERVICE_NAME, sqlScript, "get")
+	return
+}
 func CustomSql[T any](ctx context.Context, client dapr.Client, selectField, fromField, whereField string) (result []T, err error) {
 	selectField = url.QueryEscape(selectField)
 	fromField = url.QueryEscape(fromField)
