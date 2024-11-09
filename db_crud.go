@@ -300,21 +300,9 @@ func DbBatchInsert[T any](ctx context.Context, client dapr.Client, val []T, tabl
 	return nil
 }
 func DbRefreshContinuousAggregate(ctx context.Context, client dapr.Client, name, start, end string) (err error) {
-	sqlScript := "/_QUERIES/mv/refresh_continuous_aggregate"
-	query := map[string]any{
-		"name":  name,
-		"start": start,
-		"end":   end,
-	}
-	buf, err := json.Marshal(query)
-	if err != nil {
-		return
-	}
-	dataContent := &dapr.DataContent{
-		ContentType: "text/json",
-		Data:        buf,
-	}
-	_, err = client.InvokeMethodWithContent(ctx, DB_SERVICE_NAME, sqlScript, "post", dataContent)
+	sqlScript := "/_QUERIES/mv/refresh_continuous_aggregate?name=" + name + "&start=" + start + "&end=" + end
+
+	_, err = client.InvokeMethod(ctx, DB_SERVICE_NAME, sqlScript, "post")
 	return
 }
 func CustomSql[T any](ctx context.Context, client dapr.Client, selectField, fromField, whereField string) (result []T, err error) {
