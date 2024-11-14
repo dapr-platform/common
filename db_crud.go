@@ -305,6 +305,12 @@ func DbRefreshContinuousAggregate(ctx context.Context, client dapr.Client, name,
 	_, err = client.InvokeMethod(ctx, DB_SERVICE_NAME, sqlScript, "post")
 	return
 }
+func DbRefreshContinuousAggregateFull(ctx context.Context, client dapr.Client, name string) (err error) {
+	sqlScript := "/_QUERIES/mv/refresh_continuous_aggregate_full?name=" + name
+
+	_, err = client.InvokeMethod(ctx, DB_SERVICE_NAME, sqlScript, "post")
+	return
+}
 func CustomSql[T any](ctx context.Context, client dapr.Client, selectField, fromField, whereField string) (result []T, err error) {
 	selectField = url.QueryEscape(selectField)
 	fromField = url.QueryEscape(fromField)
