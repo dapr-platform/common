@@ -3,15 +3,26 @@ package common
 import (
 	"bytes"
 	"fmt"
-	"github.com/sirupsen/logrus"
+	"os"
 	"path/filepath"
+	"strings"
+
+	"github.com/sirupsen/logrus"
 )
 
 var Logger = logrus.New()
+var levelStr = "debug"
 
 func init() {
 	Logger.SetReportCaller(true)
-	Logger.SetLevel(logrus.DebugLevel)
+	if v := os.Getenv("LOG_LEVEL"); v != "" {
+		levelStr = strings.ToLower(v)
+	}
+	LoggerLevel, err := logrus.ParseLevel(levelStr)
+	if err != nil {
+		LoggerLevel = logrus.DebugLevel
+	}
+	Logger.SetLevel(LoggerLevel)
 	Logger.SetFormatter(&MyFormatter{})
 }
 
