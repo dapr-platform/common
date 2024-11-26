@@ -108,8 +108,8 @@ func DbGetOne[T any](ctx context.Context, client dapr.Client, tableName string, 
 	return
 }
 
-func DbGetCount[T any](ctx context.Context, client dapr.Client, tableName string, queryString string) (result *T, err error) {
-	ret, err := client.InvokeMethod(ctx, DB_SERVICE_NAME, "/"+DBNAME+"/"+DB_SCHEMA+"/"+tableName+"?"+queryString, "get")
+func DbGetCount[T any](ctx context.Context, client dapr.Client, tableName string, queryString string) (result int64, err error) {
+	ret, err := client.InvokeMethod(ctx, DB_SERVICE_NAME, "/"+DBNAME+"/"+DB_SCHEMA+"/"+tableName+"?_count=id&"+queryString, "get")
 	if err != nil {
 		log.Printf("errno=%d, method=%s,error=%s\n", ErrServiceInvokeDB.Status, "/"+DBNAME+"/"+DB_SCHEMA+"/"+tableName+"?"+queryString, err.Error())
 		err = errors.WithMessage(err, "dbQuery error")
@@ -118,16 +118,16 @@ func DbGetCount[T any](ctx context.Context, client dapr.Client, tableName string
 	dec := json.NewDecoder(bytes.NewReader(ret)) //避免int64精度丢失
 	dec.UseNumber()
 
-	var datas = []T{}
+	var datas = make(map[string]int64)
 	err = dec.Decode(&datas)
-	if len(datas) > 0 {
-		result = &datas[0]
-	}
 
 	if err != nil {
 		log.Printf("errno=%d, method=%s,error=%s\n", ErrListUnMashal.Status, "unMashal dataList", err.Error())
 		err = errors.WithMessage(err, "unmashal error")
 		return
+	}
+	if len(datas) > 0 {
+		result = datas["count"]
 	}
 	return
 }
