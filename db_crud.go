@@ -202,8 +202,14 @@ func DbDeleteExpired(ctx context.Context, client dapr.Client, tableName string, 
 	_, err = client.InvokeMethod(ctx, DB_SERVICE_NAME, method, "delete")
 	return
 }
+func DbUpdateByOps(ctx context.Context, client dapr.Client, tableName string, field []string, ops []string, val []any) error {
+	return dbOperationByOps(ctx, client, tableName, field, ops, val, "put")
+}
 
 func DbDeleteByOps(ctx context.Context, client dapr.Client, tableName string, field []string, ops []string, val []any) error {
+	return dbOperationByOps(ctx, client, tableName, field, ops, val, "delete")
+}
+func dbOperationByOps(ctx context.Context, client dapr.Client, tableName string, field []string, ops []string, val []any, verb string) error{
 	query := "?"
 	for i := 0; i < len(field); i++ {
 		s, useQuot, err := getValue(val[i])
@@ -227,7 +233,7 @@ func DbDeleteByOps(ctx context.Context, client dapr.Client, tableName string, fi
 
 	method := "/" + DBNAME + "/" + DB_SCHEMA + "/" + tableName + query
 
-	_, err := client.InvokeMethod(ctx, DB_SERVICE_NAME, method, "delete")
+	_, err := client.InvokeMethod(ctx, DB_SERVICE_NAME, method, verb)
 	return err
 }
 func getOp(op string) string {
