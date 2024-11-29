@@ -118,7 +118,7 @@ func DbGetCount(ctx context.Context, client dapr.Client, tableName string, count
 	dec := json.NewDecoder(bytes.NewReader(ret)) //避免int64精度丢失
 	dec.UseNumber()
 
-	var datas = make(map[string]int64)
+	var datas = make([]map[string]int64, 0)
 	err = dec.Decode(&datas)
 
 	if err != nil {
@@ -127,7 +127,7 @@ func DbGetCount(ctx context.Context, client dapr.Client, tableName string, count
 		return
 	}
 	if len(datas) > 0 {
-		result = datas["count"]
+		result = datas[0]["count"]
 	}
 	return
 }
