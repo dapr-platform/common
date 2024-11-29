@@ -246,7 +246,7 @@ func dbOperationByOps(ctx context.Context, client dapr.Client, tableName string,
 	} else {
 		_, err = client.InvokeMethod(ctx, DB_SERVICE_NAME, method, verb)
 		return err
-	}	
+	}
 }
 func getOp(op string) string {
 	switch op {
@@ -317,6 +317,44 @@ func DbBatchInsert[T any](ctx context.Context, client dapr.Client, val []T, tabl
 	}
 	return nil
 }
+
+func DbUpsertIg[T any](ctx context.Context, client dapr.Client, data T, tableName string, keys string, updateIgKeys string) (err error) {
+	buf, err := json.Marshal(data)
+	if err != nil {
+		err = errors.WithMessage(err, "dbupsert marshal error")
+		return
+	}
+	str := string(buf)
+	str = escapeSqlSingleQuote(str)
+	dataContent := &dapr.DataContent{
+		ContentType: "text/json",
+		Data:        []byte(str),
+	}
+	_, err = client.InvokeMethodWithContent(ctx, DB_SERVICE_NAME, "/upsert/"+DBNAME+"/"+DB_SCHEMA+"/"+tableName+"?keys="+keys+"&ignore_keys="+updateIgKeys+"&batch=false", "post", dataContent)
+
+	return
+}
+
+func DbBatchUpsertIg[T any](ctx context.Context, client dapr.Client, datas []T, tableName string, keys string, updateIgKeys string) (err error) {
+	if len(datas) == 0 {
+		return
+	}
+	buf, err := json.Marshal(datas)
+	if err != nil {
+		err = errors.WithMessage(err, "DbBatchUpsert marshal error")
+		return
+	}
+	str := string(buf)
+	str = escapeSqlSingleQuote(str)
+	dataContent := &dapr.DataContent{
+		ContentType: "text/json",
+		Data:        []byte(str),
+	}
+	_, err = client.InvokeMethodWithContent(ctx, DB_SERVICE_NAME, "/upsert/"+DBNAME+"/"+DB_SCHEMA+"/"+tableName+"?keys="+keys+"&ignore_keys="+updateIgKeys+"&batch=true", "post", dataContent)
+
+	return
+}
+
 func DbRefreshContinuousAggregate(ctx context.Context, client dapr.Client, name, start, end string) (err error) {
 	sqlScript := "/_QUERIES/mv/refresh_continuous_aggregate?name=" + name + "&start=" + start + "&end=" + end
 
