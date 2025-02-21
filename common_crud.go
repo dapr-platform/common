@@ -3,16 +3,18 @@ package common
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/go-chi/chi/v5"
-	"github.com/spf13/cast"
+	"io"
 	"net/url"
 	"strings"
 
-	dapr "github.com/dapr/go-sdk/client"
-	"io/ioutil"
+	"github.com/go-chi/chi/v5"
+	"github.com/spf13/cast"
+
 	"log"
 	"net/http"
 	"strconv"
+
+	dapr "github.com/dapr/go-sdk/client"
 )
 
 func CommonPageQuery[T any](w http.ResponseWriter, r *http.Request, client dapr.Client, tableName string, idFieldName string) {
@@ -60,7 +62,7 @@ func CommonPageQuery[T any](w http.ResponseWriter, r *http.Request, client dapr.
 
 	ret, err := client.InvokeMethod(r.Context(), DB_SERVICE_NAME, "/"+DBNAME+"/"+DB_SCHEMA+"/"+tableName+"?_count="+idFieldName+"&"+qstr, "get")
 	if err != nil {
-		HttpError(w, ErrServiceInvokeDB, http.StatusOK)
+		HttpError(w, ErrServiceInvokeDB.AppendMsg(err.Error()), http.StatusOK)
 
 		return
 	}
@@ -79,7 +81,7 @@ func CommonPageQuery[T any](w http.ResponseWriter, r *http.Request, client dapr.
 	}
 	ret, err = client.InvokeMethod(r.Context(), DB_SERVICE_NAME, methods, "get")
 	if err != nil {
-		HttpError(w, ErrServiceInvokeDB, http.StatusOK)
+		HttpError(w, ErrServiceInvokeDB.AppendMsg(err.Error()), http.StatusOK)
 
 		log.Printf("errno=%d, method=%s,error=%s\n", ErrServiceInvokeDB.Status, methods, err.Error())
 
@@ -90,19 +92,19 @@ func CommonPageQuery[T any](w http.ResponseWriter, r *http.Request, client dapr.
 	var tmpList []T
 	err = dec.Decode(&tmpList)
 	if err != nil {
-		HttpError(w, ErrService, http.StatusOK)
+		HttpError(w, ErrService.AppendMsg(err.Error()), http.StatusOK)
 		return
 	}
 	buf, err := json.Marshal(tmpList)
 	if err != nil {
-		HttpError(w, ErrService, http.StatusOK)
+		HttpError(w, ErrService.AppendMsg(err.Error()), http.StatusOK)
 		log.Printf("errno=%d, method=%s,error=%s\n", ErrService.Status, "Marshal dataList", err.Error())
 		return
 	}
 	var tmpMapList []map[string]any
 	err = json.Unmarshal(buf, &tmpMapList)
 	if err != nil {
-		HttpError(w, ErrService, http.StatusOK)
+		HttpError(w, ErrService.AppendMsg(err.Error()), http.StatusOK)
 		log.Printf("errno=%d, method=%s,error=%s\n", ErrService.Status, "Marshal dataList", err.Error())
 		return
 	}
@@ -162,7 +164,7 @@ func CommonQuery[T any](w http.ResponseWriter, r *http.Request, client dapr.Clie
 	}
 	ret, err := client.InvokeMethod(r.Context(), DB_SERVICE_NAME, methods, "get")
 	if err != nil {
-		HttpError(w, ErrServiceInvokeDB, http.StatusOK)
+		HttpError(w, ErrServiceInvokeDB.AppendMsg(err.Error()), http.StatusOK)
 
 		log.Printf("errno=%d, method=%s,error=%s\n", ErrServiceInvokeDB.Status, methods, err.Error())
 
@@ -173,19 +175,19 @@ func CommonQuery[T any](w http.ResponseWriter, r *http.Request, client dapr.Clie
 	var tmpList []T
 	err = dec.Decode(&tmpList)
 	if err != nil {
-		HttpError(w, ErrService, http.StatusOK)
+		HttpError(w, ErrService.AppendMsg(err.Error()), http.StatusOK)
 		return
 	}
 	buf, err := json.Marshal(tmpList)
 	if err != nil {
-		HttpError(w, ErrService, http.StatusOK)
+		HttpError(w, ErrService.AppendMsg(err.Error()), http.StatusOK)
 		log.Printf("errno=%d, method=%s,error=%s\n", ErrService.Status, "Marshal dataList", err.Error())
 		return
 	}
 	var tmpMapList []map[string]any
 	err = json.Unmarshal(buf, &tmpMapList)
 	if err != nil {
-		HttpError(w, ErrService, http.StatusOK)
+		HttpError(w, ErrService.AppendMsg(err.Error()), http.StatusOK)
 		log.Printf("errno=%d, method=%s,error=%s\n", ErrService.Status, "Marshal dataList", err.Error())
 		return
 	}
@@ -209,7 +211,7 @@ func CommonQuery[T any](w http.ResponseWriter, r *http.Request, client dapr.Clie
 }
 
 func CommonUpsert(w http.ResponseWriter, r *http.Request, client dapr.Client, tableName string, keys string) (err error) {
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		HttpError(w, ErrReqBodyRead.AppendMsg(err.Error()), http.StatusOK)
 		return
