@@ -45,6 +45,8 @@ func GetDaprClient() client.Client {
 
 			headerBuffer := 1
 			opts = append(opts, grpc.MaxCallRecvMsgSize((maxRequestBodySize+headerBuffer)*1024*1024))
+			opts = append(opts, grpc.MaxCallSendMsgSize((maxRequestBodySize+headerBuffer)*1024*1024))
+            
 			conn, err := grpc.NewClient(net.JoinHostPort(daprHost,
 				daprPort),
 				grpc.WithDefaultCallOptions(opts...), grpc.WithTransportCredentials(insecure.NewCredentials()))
