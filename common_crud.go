@@ -24,6 +24,7 @@ func CommonPageQuery[T any](w http.ResponseWriter, r *http.Request, client dapr.
 	var pageSize = "10"
 	var orderField = ""
 	var qstr = ""
+	var countQstr = ""
 	if vars != nil {
 		if p, exists := vars["_page"]; exists {
 			page = p[0]
@@ -43,9 +44,13 @@ func CommonPageQuery[T any](w http.ResponseWriter, r *http.Request, client dapr.
 			for _, vv := range v {
 				val := url.QueryEscape(vv)
 				qstr += k + "=" + val + "&"
+				if k != "_select" {
+					countQstr += k + "=" + val + "&"
+				}
 			}
 		}
 		qstr = strings.TrimSuffix(qstr, "&")
+		countQstr = strings.TrimSuffix(countQstr, "&")
 		Logger.Debug("qstr:", qstr)
 
 	}
@@ -60,7 +65,7 @@ func CommonPageQuery[T any](w http.ResponseWriter, r *http.Request, client dapr.
 		return
 	}
 
-	ret, err := client.InvokeMethod(r.Context(), DB_SERVICE_NAME, "/"+DBNAME+"/"+DB_SCHEMA+"/"+tableName+"?_count="+idFieldName+"&"+qstr, "get")
+	ret, err := client.InvokeMethod(r.Context(), DB_SERVICE_NAME, "/"+DBNAME+"/"+DB_SCHEMA+"/"+tableName+"?_count="+idFieldName+"&"+countQstr, "get")
 	if err != nil {
 		HttpError(w, ErrServiceInvokeDB.AppendMsg(err.Error()), http.StatusOK)
 
